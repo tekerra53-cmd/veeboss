@@ -5,8 +5,11 @@ import { Analytics } from "@vercel/analytics/react";
 
 
 const easingCurve: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const STORAGE_KEY = "veeboss-site-content-v1";
+
 const ADMIN_PASSCODE = "veeboss-admin";
+
+// Where the backend API runs (same machine for dev, adjust for production)
+const API_BASE_URL = (globalThis as any)?.VITE_API_BASE_URL || "http://localhost:3001";
 const ADMIN_SESSION_KEY = "veeboss-admin-session";
 
 type Collection = {
@@ -259,45 +262,40 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function loadContent(): SiteContent {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return initialContent;
-  try {
-    const parsed = JSON.parse(stored) as SiteContent;
-    const email =
-      !parsed.contactEmail || parsed.contactEmail === "atelier@veebossstitches.com"
-        ? initialContent.contactEmail
-        : parsed.contactEmail;
-    const whatsapp =
-      !parsed.contactWhatsapp || parsed.contactWhatsapp === "+234 801 234 5678"
-        ? initialContent.contactWhatsapp
-        : parsed.contactWhatsapp;
-    const instagram =
-      !parsed.socialInstagram || parsed.socialInstagram === "https://instagram.com/veebossstitches"
-        ? initialContent.socialInstagram
-        : parsed.socialInstagram;
-    const tiktok =
-      !parsed.socialTikTok || parsed.socialTikTok === "https://tiktok.com/@veebossstitches"
-        ? initialContent.socialTikTok
-        : parsed.socialTikTok;
+function sanitizeContent(parsed: Partial<SiteContent> | null | undefined): SiteContent {
+  const p = (parsed ?? {}) as SiteContent;
+  const email = !p.contactEmail || p.contactEmail === "atelier@veebossstitches.com" ? initialContent.contactEmail : p.contactEmail;
+  const whatsapp = !p.contactWhatsapp || p.contactWhatsapp === "+234 801 234 5678" ? initialContent.contactWhatsapp : p.contactWhatsapp;
+  const instagram = !p.socialInstagram || p.socialInstagram === "https://instagram.com/veebossstitches" ? initialContent.socialInstagram : p.socialInstagram;
+  const tiktok = !p.socialTikTok || p.socialTikTok === "https://tiktok.com/@veebossstitches" ? initialContent.socialTikTok : p.socialTikTok;
 
-    return {
-      ...initialContent,
-      ...parsed,
-      contactEmail: email,
-      contactWhatsapp: whatsapp,
-      contactLocation: parsed.contactLocation || initialContent.contactLocation,
-      socialInstagram: instagram,
-      socialTikTok: tiktok,
-      socialPinterest: parsed.socialPinterest || initialContent.socialPinterest,
-      collections: parsed.collections?.length ? parsed.collections : initialContent.collections,
-      process: parsed.process?.length ? parsed.process : initialContent.process,
-      services: parsed.services?.length ? parsed.services : initialContent.services,
-    };
+  return {
+    ...initialContent,
+    ...p,
+    contactEmail: email,
+    contactWhatsapp: whatsapp,
+    contactLocation: p.contactLocation || initialContent.contactLocation,
+    socialInstagram: instagram,
+    socialTikTok: tiktok,
+    socialPinterest: p.socialPinterest || initialContent.socialPinterest,
+    collections: p.collections?.length ? p.collections : initialContent.collections,
+    process: p.process?.length ? p.process : initialContent.process,
+    services: p.services?.length ? p.services : initialContent.services,
+  };
+}
+
+async function loadContent(): Promise<SiteContent> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/content`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to load content");
+    const json = await res.json();
+    const data = json?.content ?? json;
+    return sanitizeContent(data);
   } catch {
     return initialContent;
   }
 }
+
 
 function getWhatsappHref(value: string) {
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
@@ -624,13 +622,36 @@ function HomePage({ content }: { content: SiteContent }) {
         </div>
       </section>
 
-      <section id="collections" className="bg-zinc-950 px-6 py-20 md:px-10 md:py-28">
+      <section id="collections" className="relative bg-zinc-950 px-6 py-20 md:px-10 md:py-28">
         <motion.div {...fadeUp} className="mx-auto mb-10 max-w-7xl md:mb-14">
-          <p className="text-xs uppercase tracking-[0.26em] text-zinc-400">Selected Work</p>
-          <h2 className="font-display mt-4 max-w-3xl text-4xl uppercase tracking-[0.05em] text-white md:text-6xl">
-            Curated Collections
-          </h2>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-zinc-400">Selected Work</p>
+              <h2 className="font-display mt-4 max-w-3xl text-4xl uppercase tracking-[0.05em] text-white md:text-6xl">
+                Curated Collections
+              </h2>
+            </div>
+
+            <Link
+              to="/collections"
+              className="hidden md:inline-flex items-center whitespace-nowrap rounded-full border border-white/30 bg-white/5 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-white shadow-[0_0_30px_rgba(255,255,255,0.06)] transition hover:bg-white/10"
+            >
+              View more collections
+            </Link>
+          </div>
         </motion.div>
+
+        {/* Mobile sticky quick archive button (sticks until user scrolls past this section) */}
+        <div className="sticky top-[86px] z-20 -mx-6 px-6 md:hidden">
+          <div className="mx-auto max-w-7xl pb-3">
+            <Link
+              to="/collections"
+              className="inline-flex w-full items-center justify-center whitespace-nowrap rounded-2xl border border-white/25 bg-black/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-[0_10px_50px_rgba(0,0,0,0.6)] backdrop-blur supports-[backdrop-filter]:bg-black/55 transition hover:border-white/50"
+            >
+              view more collections
+            </Link>
+          </div>
+        </div>
 
         <div className="mx-auto grid max-w-7xl gap-px bg-zinc-800 md:grid-cols-2">
           {content.collections.slice(0, 4).map((collection, index) => (
@@ -1053,6 +1074,7 @@ function AdminPage({
             Unlock Admin
           </button>
         </div>
+        <SponsorSignature />
       </main>
     );
   }
@@ -1566,21 +1588,92 @@ function AdminPage({
           </section>
         )}
       </div>
+      <SponsorSignature />
     </main>
   );
 }
 
 function SponsorSignature() {
   return (
-    <footer className="border-t border-white/10 bg-black/90 px-6 py-6 md:px-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">Project Sponsor</p>
-        <p className="text-sm text-zinc-200">
-          Built and sponsored by{" "}
-          <span className="font-display bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-300 bg-clip-text text-xl tracking-[0.04em] text-transparent">
-            TechErra
-          </span>
-        </p>
+    <footer className="border-t border-white/10 bg-zinc-950/95 px-6 py-8 md:px-10">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="space-y-2 text-center sm:text-left">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-300/70">
+              Partner Acknowledgment
+            </p>
+            <p className="max-w-2xl text-sm leading-relaxed text-zinc-300 md:text-base">
+             Supported by TechErra, our long-term ally in digital innovation. Together, we turn complex ideas into seamless digital realities.
+            </p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="relative inline-flex items-center gap-3 overflow-hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-100 shadow-sm"
+            style={{ WebkitBoxReflect: "below 4px linear-gradient(transparent, rgba(255,255,255,0.12))" }}
+          >
+            <style>{`
+              .techerra-border-edge {
+                position: absolute;
+                pointer-events: none;
+                z-index: 10;
+                border-radius: 9999px;
+              }
+              .techerra-border-edge.top,
+              .techerra-border-edge.bottom {
+                left: 1px;
+                right: 1px;
+                height: 2px;
+                background: linear-gradient(90deg, transparent 0%, rgba(34,211,238,0.85) 35%, rgba(34,211,238,0.85) 65%, transparent 100%);
+              }
+              .techerra-border-edge.left,
+              .techerra-border-edge.right {
+                top: 1px;
+                bottom: 1px;
+                width: 2px;
+                background: linear-gradient(180deg, transparent 0%, rgba(34,211,238,0.85) 35%, rgba(34,211,238,0.85) 65%, transparent 100%);
+              }
+              .techerra-border-edge.top { top: 1px; animation: techerra-slide-x 2.4s linear infinite; }
+              .techerra-border-edge.bottom { bottom: 1px; animation: techerra-slide-x 2.4s linear infinite reverse; }
+              .techerra-border-edge.left { left: 1px; animation: techerra-slide-y 2.4s linear infinite; }
+              .techerra-border-edge.right { right: 1px; animation: techerra-slide-y 2.4s linear infinite reverse; }
+              @keyframes techerra-slide-x {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+              }
+              @keyframes techerra-slide-y {
+                0% { transform: translateY(-100%); }
+                100% { transform: translateY(100%); }
+              }
+            `}</style>
+            <span className="techerra-border-edge top" />
+            <span className="techerra-border-edge right" />
+            <span className="techerra-border-edge bottom" />
+            <span className="techerra-border-edge left" />
+
+            <div className="relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
+              <span className="font-semibold">T</span>
+              <motion.span
+                className="absolute inset-0 rounded-full"
+                animate={{
+                  boxShadow: [
+                    "0 0 0px rgba(34,211,238,0)",
+                    "0 0 16px rgba(34,211,238,0.28)",
+                    "0 0 0px rgba(34,211,238,0)",
+                  ],
+                  opacity: [0.7, 1, 0.7],
+                }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <span className="font-semibold text-white">TechErra</span>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </footer>
   );
@@ -1641,9 +1734,20 @@ function FuturisticPreloader() {
 }
 
 function AppShell() {
-  const [content, setContent] = useState<SiteContent>(() => loadContent());
+  const location = useLocation();
+  const [content, setContent] = useState<SiteContent>(() => initialContent);
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const loaded = await loadContent();
+      if (!cancelled) setContent(loaded);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsLoading(false), 1200);
@@ -1657,8 +1761,29 @@ function AppShell() {
     };
   }, [isLoading]);
 
+  // Persist content via backend API (not localStorage)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        await fetch(`${API_BASE_URL}/api/content`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Use same passcode as admin; frontend still uses passcode to unlock UI.
+            // In real production, use proper auth; for now keep it simple.
+            "x-admin-passcode": ADMIN_PASSCODE,
+          },
+          body: JSON.stringify(content),
+          signal: controller.signal,
+        });
+      } catch {
+        // ignore network errors
+      }
+    })();
+
+    return () => controller.abort();
   }, [content]);
 
   return (
@@ -1672,7 +1797,7 @@ function AppShell() {
         <Route path="/collections" element={<CollectionsPage content={content} />} />
         <Route path="/admin" element={<AdminPage content={content} setContent={setContent} />} />
       </Routes>
-      <SponsorSignature />
+      {location.pathname !== "/admin" && <SponsorSignature />}
     </div>
   );
 }
