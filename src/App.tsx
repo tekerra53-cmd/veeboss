@@ -1681,6 +1681,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppShell />
+      <Analytics />
     </BrowserRouter>
   );
 }
