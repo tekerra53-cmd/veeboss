@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
+import { hasSupabaseConfig, supabase } from "./supabase";
 
 
 const easingCurve: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -286,6 +287,20 @@ function sanitizeContent(parsed: Partial<SiteContent> | null | undefined): SiteC
 
 async function loadContent(): Promise<SiteContent> {
   try {
+    if (hasSupabaseConfig) {
+      const { data, error } = await supabase
+        .from<{ id: string; content: SiteContent }>("site_content")
+        .select("content")
+        .eq("id", "veeboss-site")
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
+
+      return sanitizeContent(data?.content ?? initialContent);
+    }
+
     const res = await fetch(`${API_BASE_URL}/api/content`, { method: "GET" });
     if (!res.ok) throw new Error("Failed to load content");
     const json = await res.json();
@@ -1761,12 +1776,23 @@ function AppShell() {
     };
   }, [isLoading]);
 
-  // Persist content via backend API (not localStorage)
+  // Persist content via Supabase when configured, otherwise use the local JSON backend.
   useEffect(() => {
     const controller = new AbortController();
 
     (async () => {
       try {
+        if (hasSupabaseConfig) {
+          const { error } = await supabase
+            .from("site_content")
+            .upsert({ id: "veeboss-site", content }, { onConflict: "id" });
+
+          if (error) {
+            console.warn("Supabase save failed:", error.message);
+          }
+          return;
+        }
+
         await fetch(`${API_BASE_URL}/api/content`, {
           method: "POST",
           headers: {
