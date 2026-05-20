@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
+
 
 const easingCurve: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const STORAGE_KEY = "veeboss-site-content-v1";
@@ -190,7 +192,7 @@ const initialCollections: Collection[] = [
 ];
 
 const initialContent: SiteContent = {
-  heroSubtitle: "Contemporary Fashion Portfolio",
+  heroSubtitle: "welcome to",
   heroDescription:
     "Luxury runway language translated through street instinct. Every silhouette is engineered to move with confidence, precision, and unapologetic identity.",
   services: [
@@ -1077,13 +1079,7 @@ function AdminPage({
                 browser.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setContent(initialContent)}
-              className="rounded-xl border border-white/35 px-5 py-2 text-xs uppercase tracking-[0.2em] text-white"
-            >
-              Reset to Defaults
-            </button>
+
             <button
               type="button"
               onClick={() => setUnlocked(false)}
@@ -1648,6 +1644,7 @@ function AppShell() {
   const [content, setContent] = useState<SiteContent>(() => loadContent());
   const [isLoading, setIsLoading] = useState(true);
 
+
   useEffect(() => {
     const timer = window.setTimeout(() => setIsLoading(false), 1200);
     return () => window.clearTimeout(timer);
@@ -1666,9 +1663,11 @@ function AppShell() {
 
   return (
     <div className="bg-black text-zinc-100">
+      <Analytics />
       <AnimatePresence>{isLoading && <FuturisticPreloader />}</AnimatePresence>
       <GlassNav />
       <Routes>
+
         <Route path="/" element={<HomePage content={content} />} />
         <Route path="/collections" element={<CollectionsPage content={content} />} />
         <Route path="/admin" element={<AdminPage content={content} setContent={setContent} />} />
