@@ -10,7 +10,7 @@ const easingCurve: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const ADMIN_PASSCODE = "veeboss-admin";
 
 // Where the backend API runs (same machine for dev, adjust for production)
-const API_BASE_URL = (globalThis as any)?.VITE_API_BASE_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 const ADMIN_SESSION_KEY = "veeboss-admin-session";
 
 type Collection = {
