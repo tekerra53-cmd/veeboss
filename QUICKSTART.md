@@ -18,9 +18,22 @@ Open:
 
 ---
 
-## Deploy to Vercel
+## Deploy Backend
 
-### Backend First (Important!)
+### Option A: Railway (Recommended for a separate backend)
+
+1. Go to https://railway.app and create a new project.
+2. Connect your GitHub repository.
+3. Set the service root to `server/`.
+4. Add environment variables:
+   ```
+   ADMIN_PASSCODE = veeboss-admin
+   STORAGE_PATH = ./content-store.json
+   ```
+5. Deploy the Railway service.
+6. Copy the backend URL (e.g., `https://veeboss-production.up.railway.app`).
+
+### Option B: Vercel Backend
 
 1. Go to [vercel.com](https://vercel.com)
 2. Click **Add New** → **Project** → Select your GitHub repo
@@ -32,13 +45,15 @@ Open:
    ```
 5. **Deploy** and copy your backend URL (e.g., `https://veeboss-api-xyz.vercel.app`)
 
+---
+
 ### Frontend After Backend
 
 1. Go back to your frontend Vercel project
 2. **Settings** → **Environment Variables**
 3. Add/Update:
    ```
-   VITE_API_BASE_URL = https://veeboss-api-xyz.vercel.app
+   VITE_API_BASE_URL = https://<your-backend-url>
    ```
 4. **Redeploy**
 

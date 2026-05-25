@@ -24,11 +24,28 @@ Or run separately:
 
 ---
 
-## Deployment to Vercel
+## Deployment to a Hosted Backend
 
-### Step 1: Deploy Backend to Vercel
+### Step 1: Deploy Backend to Railway
 
-#### Option A: As Vercel Serverless Function (Recommended)
+1. Go to https://railway.app and create a new project.
+2. Connect your GitHub repository.
+3. Set the service root to `server/`.
+4. In Railway Environment Variables, add:
+   - Name: `ADMIN_PASSCODE`
+   - Value: `veeboss-admin`
+   - Name: `STORAGE_PATH`
+   - Value: `./content-store.json`
+5. Deploy the project.
+6. Copy the Railway backend URL (e.g., `https://veeboss-production.up.railway.app`).
+
+> Note: The current backend stores content in a local JSON file. That works while the Railway instance is live, but for durable persistence use Supabase or another managed database.
+
+---
+
+### Alternative: Deploy Backend to Vercel
+
+#### Option A: As Vercel Serverless Function
 1. Push your code to GitHub
 2. Go to [vercel.com](https://vercel.com)
 3. Click **Add New** → **Project**
@@ -53,7 +70,7 @@ Or run separately:
 
 1. In your main **Vercel project**, add **Environment Variables**:
    - Name: `VITE_API_BASE_URL`
-   - Value: Your backend URL (e.g., `https://veeboss-server-abc123.vercel.app`)
+   - Value: Your backend URL (Railway or Vercel, e.g. `https://veeboss-production.up.railway.app`)
    - Scope: Select `Production`
 
 2. Redeploy frontend → Vercel auto-builds with new env vars
