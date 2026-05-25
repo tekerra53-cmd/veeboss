@@ -70,7 +70,7 @@ Or run separately:
 
 1. In your main **Vercel project**, add **Environment Variables**:
    - Name: `VITE_API_BASE_URL`
-   - Value: Your backend URL (Railway or Vercel, e.g. `https://veeboss-production.up.railway.app`)
+   - Value: the backend URL, not the frontend URL (Railway or Vercel backend service, e.g. `https://veeboss-production.up.railway.app`)
    - Scope: Select `Production`
 
 2. Redeploy frontend → Vercel auto-builds with new env vars

@@ -53,7 +53,7 @@ Open:
 2. **Settings** → **Environment Variables**
 3. Add/Update:
    ```
-   VITE_API_BASE_URL = https://<your-backend-url>
+   VITE_API_BASE_URL = https://<your-backend-backend-url>
    ```
 4. **Redeploy**
 
