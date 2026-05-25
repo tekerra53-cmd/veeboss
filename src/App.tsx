@@ -9,8 +9,14 @@ const easingCurve: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const ADMIN_PASSCODE = "veeboss-admin";
 
-// Where the backend API runs (same machine for dev, adjust for production)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+// Where the backend API runs (same machine for dev, adjust for production via VITE_API_BASE_URL)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://veeboss-production.up.railway.app";
+if (typeof window !== "undefined" && !import.meta.env.VITE_API_BASE_URL) {
+  console.warn(
+    "VITE_API_BASE_URL is not configured. Falling back to https://veeboss-production.up.railway.app. " +
+      "In production, set VITE_API_BASE_URL to your backend host in Vercel or your deployment platform.",
+  );
+}
 const ADMIN_SESSION_KEY = "veeboss-admin-session";
 
 type Collection = {
