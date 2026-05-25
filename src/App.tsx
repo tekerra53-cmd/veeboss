@@ -289,7 +289,7 @@ async function loadContent(): Promise<SiteContent> {
   try {
     if (hasSupabaseConfig) {
       const { data, error } = await supabase
-        .from<{ id: string; content: SiteContent }>("site_content")
+        .from("site_content")
         .select("content")
         .eq("id", "veeboss-site")
         .single();
@@ -298,16 +298,27 @@ async function loadContent(): Promise<SiteContent> {
         throw error;
       }
 
-      return sanitizeContent(data?.content ?? initialContent);
+      return sanitizeContent((data as { content: SiteContent } | null)?.content ?? initialContent);
     }
 
     const res = await fetch(`${API_BASE_URL}/api/content`, { method: "GET" });
     if (!res.ok) throw new Error("Failed to load content");
     const json = await res.json();
+    // Handle both old format (direct content) and new format (with version)
     const data = json?.content ?? json;
     return sanitizeContent(data);
   } catch {
     return initialContent;
+  }
+}
+
+async function checkContentVersion(): Promise<{ version: number; updatedAt: string } | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/content/version`, { method: "GET" });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -1752,17 +1763,51 @@ function AppShell() {
   const location = useLocation();
   const [content, setContent] = useState<SiteContent>(() => initialContent);
   const [isLoading, setIsLoading] = useState(true);
+  const [contentVersion, setContentVersion] = useState(0);
 
+  // Initial content load
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const loaded = await loadContent();
-      if (!cancelled) setContent(loaded);
+      if (!cancelled) {
+        setContent(loaded);
+        setContentVersion(1); // Mark as loaded
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Poll for content updates every 5 seconds
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout | null = null;
+    
+    const startPolling = () => {
+      pollInterval = setInterval(async () => {
+        try {
+          // Skip polling if using Supabase (it has real-time already)
+          if (hasSupabaseConfig) return;
+          
+          const versionInfo = await checkContentVersion();
+          if (versionInfo && versionInfo.version > contentVersion) {
+            // Content has been updated on the server, refetch it
+            const updated = await loadContent();
+            setContent(updated);
+            setContentVersion(versionInfo.version);
+          }
+        } catch {
+          // Silently ignore polling errors
+        }
+      }, 5000); // Poll every 5 seconds
+    };
+
+    startPolling();
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [contentVersion]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsLoading(false), 1200);

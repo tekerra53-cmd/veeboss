@@ -67,9 +67,26 @@ const fallbackContent = {
 
 app.get('/api/content', (req, res) => {
   const store = readStore();
-  if (store && store.content) return res.json(store.content);
+  if (store && store.content) {
+    return res.json({
+      content: store.content,
+      version: store.version || 1,
+      updatedAt: store.updatedAt || new Date().toISOString(),
+    });
+  }
   // First run: return fallback; admin can then persist real content.
-  return res.json(fallbackContent);
+  return res.json({
+    content: fallbackContent,
+    version: 0,
+    updatedAt: new Date().toISOString(),
+  });
+});
+
+app.get('/api/content/version', (req, res) => {
+  const store = readStore();
+  const version = store?.version || 0;
+  const updatedAt = store?.updatedAt || new Date().toISOString();
+  res.json({ version, updatedAt });
 });
 
 app.post('/api/content', (req, res) => {
@@ -86,9 +103,21 @@ app.post('/api/content', (req, res) => {
     return res.status(400).json({ error: 'Invalid content payload' });
   }
 
-  const next = body;
-  writeStore({ content: next, updatedAt: new Date().toISOString() });
-  return res.json({ ok: true });
+  const store = readStore() || {};
+  const nextVersion = (store.version || 0) + 1;
+  const now = new Date().toISOString();
+  
+  writeStore({ 
+    content: body, 
+    version: nextVersion,
+    updatedAt: now 
+  });
+  
+  return res.json({ 
+    ok: true, 
+    version: nextVersion,
+    updatedAt: now 
+  });
 });
 
 app.listen(PORT, () => {
