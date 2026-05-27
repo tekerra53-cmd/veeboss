@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS site_content (
 );
 
 -- Optional: create a row for the app to use (replace the JSON with your seed if desired)
-INSERT INTO site_content (id, content) VALUES ('veeboss-site', '{"heroSubtitle":"welcome to","heroDescription":"Initial seed content","services":[]}' )
+INSERT INTO site_content (id, content) VALUES ('site', '{"heroSubtitle":"welcome to","heroDescription":"Initial seed content","services":[]}' )
 ON CONFLICT (id) DO NOTHING;

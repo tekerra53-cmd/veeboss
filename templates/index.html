@@ -1,0 +1,218 @@
+{% extends 'layout.html' %}
+{% block title %}VeeBoss{% endblock %}
+{% block content %}
+<main class="bg-black text-zinc-100">
+  <section id="home" class="relative min-h-screen overflow-hidden">
+    <img
+      src="{{ url_for('static', filename='images/home-hero.jpg') }}"
+      alt="Fashion designer working on a mannequin in the studio"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/90"></div>
+
+    <div class="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-end px-6 pb-14 pt-36 md:px-10 md:pb-20 md:pt-32">
+      <p class="mb-4 text-xs uppercase tracking-[0.34em] text-zinc-200">{{ content.heroSubtitle }}</p>
+      <h1 class="font-display max-w-4xl text-4xl leading-[0.9] tracking-[0.06em] text-white sm:text-6xl md:text-8xl">
+        VEEBOSS<br />STITCHES
+      </h1>
+      <p class="mt-6 max-w-xl text-sm leading-relaxed text-zinc-200/95 md:text-base">{{ content.heroDescription }}</p>
+      <div class="mt-8 flex flex-col gap-4 sm:flex-row">
+        <a
+          href="{{ url_for('collections') }}"
+          class="border border-white bg-white px-6 py-3 text-center text-xs font-medium uppercase tracking-[0.2em] text-black transition hover:bg-transparent hover:text-white"
+        >
+          Open Collection Archive
+        </a>
+        <a
+          href="#contact"
+          class="border border-white/60 px-6 py-3 text-center text-xs font-medium uppercase tracking-[0.2em] text-white transition hover:border-white"
+        >
+          Book Consultation
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="bg-zinc-950 px-6 py-20 md:px-10 md:py-28">
+    <div class="mx-auto max-w-7xl">
+      <p class="text-xs uppercase tracking-[0.28em] text-zinc-400">What We Create</p>
+      <h2 class="font-display mt-4 text-4xl uppercase tracking-[0.05em] text-white md:text-6xl">Women&apos;s Apparel</h2>
+      <p class="mt-5 max-w-2xl text-sm leading-relaxed text-zinc-300 md:text-base">
+        Every kind of ladies wear, engineered with precision and delivered with couture-grade finishing.
+      </p>
+    </div>
+
+    <div class="mx-auto mt-12 grid max-w-7xl gap-px bg-zinc-800 sm:grid-cols-2 lg:grid-cols-4">
+      {% for service in content.services %}
+      <div class="group relative overflow-hidden bg-black p-8 transition hover:bg-zinc-950">
+        <div class="absolute inset-0 bg-gradient-to-br from-fuchsia-500/5 to-cyan-500/5 opacity-0 transition duration-500 group-hover:opacity-100"></div>
+        <div class="relative z-10">
+          <h3 class="font-display text-2xl uppercase tracking-[0.06em] text-white">{{ service.title }}</h3>
+          <p class="mt-4 text-sm leading-relaxed text-zinc-300">{{ service.description }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="collections" class="relative bg-zinc-950 px-6 py-20 md:px-10 md:py-28">
+    <div class="mx-auto mb-10 max-w-7xl md:mb-14">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.26em] text-zinc-400">Selected Work</p>
+          <h2 class="font-display mt-4 max-w-3xl text-4xl uppercase tracking-[0.05em] text-white md:text-6xl">Curated Collections</h2>
+        </div>
+        <a
+          href="{{ url_for('collections') }}"
+          class="hidden md:inline-flex items-center whitespace-nowrap rounded-full border border-white/30 bg-white/5 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-white shadow-[0_0_30px_rgba(255,255,255,0.06)] transition hover:bg-white/10"
+        >
+          View more collections
+        </a>
+      </div>
+    </div>
+
+    <div class="sticky top-[86px] z-20 -mx-6 px-6 md:hidden">
+      <div class="mx-auto max-w-7xl pb-3">
+        <a
+          href="{{ url_for('collections') }}"
+          class="inline-flex w-full items-center justify-center whitespace-nowrap rounded-2xl border border-white/25 bg-black/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-[0_10px_50px_rgba(0,0,0,0.6)] backdrop-blur supports-[backdrop-filter]:bg-black/55 transition hover:border-white/50"
+        >
+          view more collections
+        </a>
+      </div>
+    </div>
+
+    <div class="mx-auto grid max-w-7xl gap-px bg-zinc-800 md:grid-cols-2">
+      {% for collection in content.collections[:4] %}
+      <article class="group relative min-h-[60vh] overflow-hidden bg-black">
+        <img
+          src="{{ collection.image }}"
+          alt="{{ collection.name }} fashion look"
+          class="h-full w-full object-cover transition duration-700 group-hover:scale-105 group-hover:opacity-30"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+        <div class="absolute inset-x-0 bottom-0 p-7 md:p-9">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-zinc-300">{{ collection.season }}</p>
+          <h3 class="font-display mt-2 text-3xl uppercase tracking-[0.08em] text-white md:text-4xl">{{ collection.name }}</h3>
+          <p class="mt-4 max-w-md text-sm leading-relaxed text-zinc-200 opacity-100 transition duration-500 md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">{{ collection.note }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="about" class="relative min-h-[78vh] overflow-hidden">
+    <img
+      src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=2000&q=80"
+      alt="Designer studio with fabrics and pattern work"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative mx-auto flex min-h-[78vh] max-w-7xl items-center px-6 py-16 md:px-10">
+      <div class="max-w-3xl">
+        <p class="text-xs uppercase tracking-[0.28em] text-zinc-300">About the Designer</p>
+        <h2 class="font-display mt-5 text-4xl uppercase tracking-[0.05em] text-white md:text-6xl">Craft as Discipline.<br />Vision as Identity.</h2>
+        <p class="mt-8 text-base leading-relaxed text-zinc-200 md:text-lg">{{ content.aboutNarrative }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="process" class="relative overflow-hidden px-6 py-20 md:px-10 md:py-28">
+    <img
+      src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=2200&q=80"
+      alt="Studio table with fabrics and design sketches"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/74 to-black/90"></div>
+    <div class="relative mx-auto max-w-7xl">
+      <div class="max-w-4xl">
+        <p class="text-xs uppercase tracking-[0.28em] text-zinc-300">Studio Process</p>
+        <h2 class="font-display mt-4 text-4xl uppercase tracking-[0.05em] text-white md:text-6xl">Precision Pipeline,<br />Signature Finish</h2>
+        <p class="mt-6 max-w-2xl text-sm leading-relaxed text-zinc-200 md:text-base">
+          From reference board to final stitch, each stage is intentional. The result is a silhouette that feels bold on camera and effortless in motion.
+        </p>
+      </div>
+      <div class="mt-14 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <div class="relative overflow-hidden border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(217,70,239,0.18),transparent_40%),radial-gradient(circle_at_90%_10%,rgba(34,211,238,0.16),transparent_40%)]"></div>
+          <div class="relative">
+            <p class="text-xs uppercase tracking-[0.22em] text-zinc-300">Atelier Standard</p>
+            <p class="mt-4 text-sm leading-relaxed text-zinc-200">
+              Every drop follows the same discipline: narrative-first concepting, engineered pattern development, and finish-level quality control before release.
+            </p>
+            <div class="mt-8 space-y-4 text-xs uppercase tracking-[0.2em] text-zinc-300">
+              <div class="flex items-center justify-between border-b border-white/20 pb-3">
+                <span>Fit Sessions</span>
+                <span>Multiple Rounds</span>
+              </div>
+              <div class="flex items-center justify-between border-b border-white/20 pb-3">
+                <span>Construction</span>
+                <span>Hand-Finished</span>
+              </div>
+              <div class="flex items-center justify-between pb-1">
+                <span>Release QA</span>
+                <span>Runway Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          {% for item in content.process %}
+          <article class="group relative overflow-hidden border border-white/20 bg-black/45 p-5 transition md:p-6">
+            <div class="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 to-cyan-500/10 opacity-0 transition duration-500 group-hover:opacity-100"></div>
+            <div class="relative grid gap-4 md:grid-cols-[78px_1fr] md:items-start">
+              <div class="font-display text-3xl tracking-[0.08em] text-zinc-100">{{ item.step }}</div>
+              <div>
+                <h3 class="font-display text-2xl uppercase tracking-[0.05em] text-white md:text-3xl">{{ item.title }}</h3>
+                <p class="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-200 md:text-base">{{ item.detail }}</p>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="relative flex min-h-screen items-center overflow-hidden bg-black px-6 py-20 text-zinc-100 md:px-10">
+    <img
+      src="https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=2200&q=80"
+      alt="Fashion atelier contact backdrop"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0 bg-black/75"></div>
+    <div class="relative z-10 mx-auto w-full max-w-7xl">
+      <div class="relative overflow-hidden rounded-3xl border border-white/25 bg-white/10 p-6 shadow-[0_0_70px_rgba(168,85,247,0.2)] backdrop-blur-2xl md:p-10">
+        <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div class="space-y-4">
+            <p class="text-xs uppercase tracking-[0.28em] text-cyan-300/70">Contact</p>
+            <h2 class="font-display text-4xl uppercase tracking-[0.05em] text-white md:text-5xl">Ready for your next signature look?</h2>
+            <p class="max-w-xl text-sm leading-relaxed text-zinc-300 md:text-base">{{ content.contactIntro }}</p>
+          </div>
+          <div class="space-y-4 border-t border-white/10 pt-6 text-sm text-zinc-300 md:border-t-0 md:pt-0">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.2em] text-zinc-400">Email</p>
+              <a href="mailto:{{ content.contactEmail }}" class="mt-2 inline-block text-base text-white">{{ content.contactEmail }}</a>
+            </div>
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.2em] text-zinc-400">WhatsApp</p>
+              <a href="https://wa.me/{{ content.contactWhatsapp | replace('+', '') | replace(' ', '') }}" class="mt-2 inline-block text-base text-white">{{ content.contactWhatsapp }}</a>
+            </div>
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.2em] text-zinc-400">Location</p>
+              <p class="mt-2 text-base text-white">{{ content.contactLocation }}</p>
+            </div>
+            <div class="space-y-3 pt-4">
+              <a href="{{ content.socialInstagram }}" target="_blank" class="block text-xs uppercase tracking-[0.2em] text-white/80 hover:text-white">Instagram</a>
+              <a href="{{ content.socialTikTok }}" target="_blank" class="block text-xs uppercase tracking-[0.2em] text-white/80 hover:text-white">TikTok</a>
+              <a href="{{ content.socialPinterest }}" target="_blank" class="block text-xs uppercase tracking-[0.2em] text-white/80 hover:text-white">Pinterest</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% include 'sponsor.html' %}
+</main>
+{% endblock %}

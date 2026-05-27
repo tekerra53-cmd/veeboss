@@ -1,112 +1,24 @@
-# ⚡ Quick Start Guide
+# Quick Start
 
 ## Local Development
 
-```bash
-# 1. Install all dependencies
-npm install
-npm --prefix server install
-
-# 2. Start everything
-npm run dev:all
-```
-
-Open:
-- **Frontend:** http://localhost:5173
-- **Admin:** http://localhost:5173/admin (passcode: `veeboss-admin`)
-- **API:** http://localhost:3001/api/content
-
----
-
-## Deploy Backend
-
-### Option A: Railway (Recommended for a separate backend)
-
-1. Go to https://railway.app and create a new project.
-2. Connect your GitHub repository.
-3. Set the service root to `server/`.
-4. Add environment variables:
+1. Activate Python environment:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate
    ```
-   ADMIN_PASSCODE = veeboss-admin
-   STORAGE_PATH = ./content-store.json
+2. Install dependencies:
+   ```powershell
+   pip install -r requirements.txt
    ```
-5. Deploy the Railway service.
-6. Copy the backend URL (e.g., `https://veeboss-production.up.railway.app`).
-
-### Option B: Vercel Backend
-
-1. Go to [vercel.com](https://vercel.com)
-2. Click **Add New** → **Project** → Select your GitHub repo
-3. **Root Directory:** Change to `server/`
-4. **Environment Variables:**
+3. Start the application:
+   ```powershell
+   python app.py
    ```
-   ADMIN_PASSCODE = veeboss-admin
-   STORAGE_PATH = /tmp/content-store.json
-   ```
-5. **Deploy** and copy your backend URL (e.g., `https://veeboss-api-xyz.vercel.app`)
 
----
+Visit http://127.0.0.1:5000
 
-### Frontend After Backend
+## Admin Login
 
-1. Go back to your frontend Vercel project
-2. **Settings** → **Environment Variables**
-3. Add/Update:
-   ```
-   VITE_API_BASE_URL = https://<your-backend-backend-url>
-   ```
-4. **Redeploy**
-
----
-
-## How It Works
-
-✅ You make changes in admin dashboard  
-✅ Changes saved to backend  
-✅ Frontend polls backend every 5 seconds  
-✅ Website updates automatically (no refresh needed!)  
-
----
-
-## GitHub → Auto-Deploy
-
-```bash
-git add .
-git commit -m "Update content"
-git push origin main
-```
-
-Vercel automatically rebuilds both frontend and backend. Done! 🎉
-
----
-
-## Files Created
-
-- `.env` - Local development variables
-- `.env.example` - Template for environment variables
-- `.gitignore` - What to exclude from Git
-- `vercel.json` - Frontend Vercel config
-- `server/vercel.json` - Backend Vercel config
-- `DEPLOYMENT.md` - Full deployment guide
-
----
-
-## Troubleshooting
-
-**Changes not syncing?**
-- Verify `VITE_API_BASE_URL` is set in Vercel
-- Check backend is running: `curl https://your-backend-url/api/content`
-
-**Backend data lost after deploy?**
-- Vercel's `/tmp` is temporary. Set up Supabase for persistent storage.
-- See `DEPLOYMENT.md` for Supabase instructions.
-
----
-
-## Next: Push to GitHub & Deploy
-
-1. `git add .`
-2. `git commit -m "Add real-time sync and deployment config"`
-3. `git push origin main`
-4. Visit Vercel dashboard and set environment variables
-5. Done! Your site is live 🚀
+- Go to http://127.0.0.1:5000/admin
+- Passcode: `veeboss-admin`

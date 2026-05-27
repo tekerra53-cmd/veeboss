@@ -2,160 +2,186 @@
 
 ## Local Development Setup
 
-### 1. Install Dependencies
-```bash
-npm install
-npm --prefix server install
+### 1. Create and activate a virtual environment
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate
 ```
 
-### 2. Start Both Frontend & Backend
-```bash
-npm run dev:all
+### 2. Install dependencies
+```powershell
+pip install -r requirements.txt
 ```
 
-Or run separately:
-- Frontend: `npm run dev` (http://localhost:5173)
-- Backend: `npm --prefix server run dev` (http://localhost:3001)
+### 3. Run the app locally
+```powershell
+python app.py
+```
 
-### 3. Test Admin Dashboard
-1. Go to http://localhost:5173/admin
-2. Enter passcode: `veeboss-admin`
-3. Make changes and verify they sync within 5 seconds on the home page
+Then open `http://127.0.0.1:5000` in your browser.
+
+### 4. Verify the admin page
+- Visit `http://127.0.0.1:5000/admin`
+- Passcode: `veeboss-admin`
 
 ---
 
-## Deployment to a Hosted Backend
+## Production Deployment Flow
 
-### Step 1: Deploy Backend to Railway
+This repository is a Flask application with templates under `templates/` and static assets served from `public/`.
 
-1. Go to https://railway.app and create a new project.
+### Recommended production server
+For deployment on a Linux host, use a WSGI server such as `gunicorn`.
+
+```powershell
+pip install gunicorn
+gunicorn app:app
+```
+
+If you deploy on Windows, use a production-ready server such as `waitress` instead.
+
+---
+
+## Deploying to Render
+
+1. Create a new Web Service on https://render.com.
 2. Connect your GitHub repository.
-3. Set the service root to `server/`.
-4. In Railway Environment Variables, add:
-   - Name: `ADMIN_PASSCODE`
-   - Value: `veeboss-admin`
-   - Name: `STORAGE_PATH`
-   - Value: `./content-store.json`
-5. Deploy the project.
-6. Copy the Railway backend URL (e.g., `https://veeboss-production.up.railway.app`).
+3. Set the **Root Directory** to the repo root.
+4. Set the **Build Command** to:
+   ```bash
+   pip install -r requirements.txt
+   ```
+5. Set the **Start Command** to:
+   ```bash
+   gunicorn app:app
+   ```
+6. Add any environment variables if needed.
+7. Deploy.
 
-> Note: The current backend stores content in a local JSON file. That works while the Railway instance is live, but for durable persistence use Supabase or another managed database.
-
----
-
-### Alternative: Deploy Backend to Vercel
-
-#### Option A: As Vercel Serverless Function
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Click **Add New** → **Project**
-4. Select your repository
-5. In **Root Directory**, choose `server/`
-6. Click **Environment Variables** and add:
-   - Name: `ADMIN_PASSCODE`
-   - Value: `veeboss-admin`
-   - Name: `STORAGE_PATH`
-   - Value: `/tmp/content-store.json` (Vercel uses `/tmp` for temporary files)
-7. Click **Deploy** ✅
-8. Copy the deployment URL (e.g., `https://veeboss-server-abc123.vercel.app`)
-
-**Note:** On Vercel, each function restart resets `/tmp/content-store.json`. For persistent storage, consider:
-- **PostgreSQL** (Vercel integrates with Neon)
-- **MongoDB** (free tier available)
-- **Supabase** (already in your code!)
+> Note: The site currently uses a hard-coded `app.secret_key` in `app.py`. Replace this with a secure value before deploying to production.
 
 ---
 
-### Step 2: Deploy Frontend to Vercel
+## Deploying to Railway
 
-1. In your main **Vercel project**, add **Environment Variables**:
-   - Name: `VITE_API_BASE_URL`
-   - Value: the backend URL, not the frontend URL (Railway or Vercel backend service, e.g. `https://veeboss-production.up.railway.app`)
-   - Scope: Select `Production`
-
-2. Redeploy frontend → Vercel auto-builds with new env vars
-
-3. Test it:
-   - Go to your frontend URL
-   - Admin dashboard at `/admin` (passcode: `veeboss-admin`)
-   - Make a change → should sync on home page within 5 seconds
+1. Create a new project on https://railway.app.
+2. Connect your GitHub repository.
+3. Set the service root to the repository root.
+4. Set the start command to:
+   ```bash
+   gunicorn app:app
+   ```
+5. Add environment variables if you decide to make the secret configurable.
+6. Deploy.
 
 ---
 
-## GitHub Push & Auto-Deploy
+## Deploying to Heroku
 
-### 1. Connect GitHub to Vercel (Already Done)
-- Both frontend and backend auto-deploy when you push to GitHub
+1. Create a `Procfile` in the repo root with:
+   ```text
+   web: gunicorn app:app
+   ```
+2. Commit and push the file.
+3. Create a Heroku app and connect your repository.
+4. Deploy from GitHub or push directly.
 
-### 2. Make Local Changes
+---
+
+## Environment and Secrets
+
+The current app uses the following values by default:
+- `ADMIN_PASSCODE = "veeboss-admin"`
+- `SECRET_KEY = "replace-this-with-a-secure-secret"`
+
+For production, override these as environment variables and use a strong random secret.
+
+### Supabase persistence
+
+To keep admin changes across Railway and Vercel deployments, configure Supabase and set these backend-only env vars:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Optionally override the default admin passcode:
+- `ADMIN_PASSCODE`
+
+Optional Flask session secret:
+- `SECRET_KEY`
+
+### Supabase table setup
+
+Use the Supabase SQL editor to create the persistence table:
+```sql
+create table if not exists site_content (
+  id text primary key,
+  content jsonb not null
+);
+
+insert into site_content (id, content)
+values ('site', '{}')
+on conflict (id) do nothing;
+```
+
+When Supabase is configured, the app will save content there. Otherwise it falls back to a local `content.json` file.
+
+### Configuring environment variables on Railway and Vercel
+
+- Railway: In your project settings, add two environment variables under "Variables": `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Mark the service role key as hidden. Redeploy the service after saving.
+
+- Vercel: Go to your Project Settings → Environment Variables and add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. For `Environment`, choose "Production" (and optionally "Preview" if you want previews to use Supabase). Set the scope to "Secret" for the service role key. Redeploy the project.
+
+Important: Use the Supabase Service Role Key only on secure server-side environments. Do NOT expose it to client-side code or public repositories.
+
+### Seeding from the SQL file
+
+You can run the file at `sql/create_site_content.sql` in the Supabase SQL editor to create the table and insert an initial row with `id = 'site'` which matches the app's expectations.
+
+Alternatively, use the provided seeding helper script which can upsert JSON from `content.json` or a specified file:
+
 ```bash
-# Make your changes
-# Test locally
-npm run dev:all
+# Dry run (prints content without contacting Supabase)
+python scripts/seed_supabase.py --dry-run
 
-# Stage and commit
-git add .
-git commit -m "Update content or features"
-
-# Push to GitHub
-git push origin main
+# Seed using local content.json or a provided file
+SUPABASE_URL="https://xyz.supabase.co" SUPABASE_SERVICE_ROLE_KEY="<service-role-key>" \
+   python scripts/seed_supabase.py --file content.json
 ```
-
-### 3. Auto-Deploy
-- Vercel automatically rebuilds and deploys both services
-- Check deployment status at vercel.com dashboard
 
 ---
 
-## Workflow Summary
+## Deployment Checklist
 
-```
-Local Changes
-     ↓
-npm run dev:all (test)
-     ↓
-git push
-     ↓
-Vercel auto-deploys frontend + backend
-     ↓
-Website updates with new API_BASE_URL
-     ↓
-Admin dashboard changes sync every 5 seconds ✨
-```
+1. Test locally:
+   ```powershell
+   python app.py
+   ```
+2. Confirm `/admin` works with `veeboss-admin`.
+3. Replace the hard-coded secret before production.
+4. Push code to GitHub.
+5. Deploy with `gunicorn app:app` on your chosen host.
+6. Open the public URL and verify the site loads.
 
 ---
 
 ## Troubleshooting
 
-### Changes not syncing?
-1. Check browser console for errors
-2. Verify `VITE_API_BASE_URL` is set in Vercel
-3. Check backend URL is reachable: `curl https://your-backend-url/api/content`
+### App does not start
+- Ensure the virtual environment is activated.
+- Confirm `Flask==2.3.4` is installed.
+- Run `python app.py` and inspect the terminal output.
 
-### Backend data resets after deploy?
-- You're using `/tmp/` storage which is ephemeral on Vercel
-- Solution: Use Supabase (already in code) or add a real database
+### Admin page fails to load
+- Verify the passcode is `veeboss-admin`.
+- Check that `session` is enabled and cookies are accepted by your browser.
 
-### Polling not working?
-1. Ensure backend is running
-2. Check CORS is enabled (it is in `server/index.js`)
-3. Browser console should show successful `/api/content/version` requests
-
----
-
-## Next Steps (Optional)
-
-### Use Supabase for Persistent Storage
-1. Uncomment `VITE_SUPABASE_*` variables in `.env`
-2. The code already uses Supabase if configured
-3. Real-time updates are instant (no polling needed)
-
-### Increase Polling Interval
-Edit `src/App.tsx` line ~1790, change `5000` to `10000` (10 seconds)
+### Production deployment returns 500
+- Confirm your host runs `gunicorn app:app`.
+- Replace `app.secret_key` with a secure value if required by your platform.
 
 ---
 
-## Need Help?
-- Backend not starting? Check `PORT` in `server/.env`
-- CORS errors? Verify backend is on same domain as frontend
-- Content not persisting? Consider using Supabase or PostgreSQL
+## Notes
+
+- This project is a single Flask app, not a separate frontend/backend repo.
+- Static files are served from `public/` via Flask.
+- The app uses Jinja templates in `templates/`.
