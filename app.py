@@ -261,6 +261,14 @@ def save_content(data):
         CONTENT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         print("✓ Content saved to content.json (backup)")
         local_ok = True
+    except (OSError, IOError) as e:
+        # Gracefully handle read-only filesystems (e.g., serverless environments)
+        if "read-only file system" in str(e).lower():
+            print(f"⚠ content.json backup skipped (read-only filesystem)")
+            local_ok = False
+        else:
+            local_error = str(e)
+            print(f"✗ content.json save error: {local_error}")
     except Exception as e:
         local_error = str(e)
         print(f"✗ content.json save error: {local_error}")
