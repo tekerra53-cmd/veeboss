@@ -8,8 +8,11 @@ from supabase import create_client
 from werkzeug.utils import secure_filename
 
 
-def load_local_env(env_path: str = ".env") -> None:
-    path = Path(env_path)
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def load_local_env(env_path: str | None = None) -> None:
+    path = BASE_DIR / (env_path or ".env")
     if not path.exists():
         return
 
@@ -37,7 +40,7 @@ ADMIN_PASSCODE = os.environ.get("ADMIN_PASSCODE", "veeboss-admin")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 SUPABASE_STORAGE_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "collection-images")
-CONTENT_FILE = Path("content.json")
+CONTENT_FILE = BASE_DIR / "content.json"
 
 print(
     "Supabase config:",
@@ -238,26 +241,35 @@ def load_content():
 
 def save_content(data):
     supabase_ok = False
+    supabase_error = None
     local_ok = False
+    local_error = None
 
     if supabase:
         try:
             supabase.table("site_content").upsert(
                 {"id": "site", "content": data}, on_conflict="id"
             ).execute()
-            print("Content saved to Supabase")
+            print("✓ Content saved to Supabase")
             supabase_ok = True
         except Exception as e:
-            print(f"Supabase save error: {e}")
+            supabase_error = str(e)
+            print(f"✗ Supabase save error: {supabase_error}")
 
     try:
+        CONTENT_FILE.parent.mkdir(parents=True, exist_ok=True)
         CONTENT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        print("Content saved to content.json (backup)")
+        print("✓ Content saved to content.json (backup)")
         local_ok = True
     except Exception as e:
-        print(f"content.json save error: {e}")
+        local_error = str(e)
+        print(f"✗ content.json save error: {local_error}")
 
-    return supabase_ok or local_ok
+    success = supabase_ok or local_ok
+    if not success:
+        print(f"WARNING: Both saves failed! Supabase: {supabase_error}, Local: {local_error}")
+    
+    return {"success": success, "supabase_ok": supabase_ok, "local_ok": local_ok, "supabase_error": supabase_error, "local_error": local_error}
 
 
 content = load_content()
@@ -333,9 +345,20 @@ def admin_save():
     global content
     content = payload
 
-    if save_content(content):
-        return {"status": "ok"}
-    return {"error": "Unable to save content"}, 500
+    result = save_content(content)
+    if result["success"]:
+        saved_to = "Supabase + backup" if result["supabase_ok"] and result["local_ok"] else ("Supabase" if result["supabase_ok"] else "local file")
+        return {"status": "ok", "saved_to": saved_to}
+    
+    error_detail = []
+    if result["supabase_error"]:
+        error_detail.append(f"Supabase: {result['supabase_error']}")
+    if result["local_error"]:
+        error_detail.append(f"Local file: {result['local_error']}")
+    
+    error_msg = " | ".join(error_detail) if error_detail else "Unknown save error"
+    print(f"SAVE FAILED: {error_msg}")
+    return {"error": error_msg}, 500
 
 @app.route("/admin/upload-image", methods=("POST",))
 def admin_upload_image():
