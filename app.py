@@ -219,34 +219,45 @@ def load_content():
                 .execute()
             )
             if response.data and isinstance(response.data, dict):
+                print("Content loaded from Supabase")
                 return response.data.get("content", DEFAULT_CONTENT)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Supabase load error: {e}")
 
     if CONTENT_FILE.exists():
         try:
-            return json.loads(CONTENT_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+            data = json.loads(CONTENT_FILE.read_text(encoding="utf-8"))
+            print("Content loaded from content.json")
+            return data
+        except Exception as e:
+            print(f"content.json load error: {e}")
 
+    print("Using DEFAULT_CONTENT")
     return DEFAULT_CONTENT
 
 
 def save_content(data):
+    supabase_ok = False
+    local_ok = False
+
     if supabase:
         try:
             supabase.table("site_content").upsert(
                 {"id": "site", "content": data}, on_conflict="id"
             ).execute()
-            return True
-        except Exception:
-            pass
+            print("Content saved to Supabase")
+            supabase_ok = True
+        except Exception as e:
+            print(f"Supabase save error: {e}")
 
     try:
         CONTENT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        return True
-    except Exception:
-        return False
+        print("Content saved to content.json (backup)")
+        local_ok = True
+    except Exception as e:
+        print(f"content.json save error: {e}")
+
+    return supabase_ok or local_ok
 
 
 content = load_content()
@@ -348,17 +359,20 @@ def admin_upload_image():
     if not collection_id:
         collection_id = f"collection-{int(time.time())}"
 
-    key = f"collections/{collection_id}/{filename}"
+    key = f"collections/{collection_id}/{int(time.time())}-{filename}"
     file_bytes = upload_file.read()
     try:
         result = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).upload(key, file_bytes)
         result_error = getattr(result, "error", None)
         if result_error:
+            print(f"Upload error: {result_error}")
             return {"error": str(result_error)}, 500
 
         public_url = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(key)
+        print(f"Image uploaded successfully: {key}")
         return {"url": public_url}
     except Exception as exc:
+        print(f"Upload exception: {exc}")
         return {"error": str(exc)}, 500
 
 @app.route("/admin/logout")
