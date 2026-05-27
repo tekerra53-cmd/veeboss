@@ -247,9 +247,22 @@ def get_render_context():
     global content
     if not isinstance(content, dict):
         content = DEFAULT_CONTENT.copy()
-    content.setdefault("collections", [])
-    content.setdefault("process", [])
-    content.setdefault("services", [])
+
+    collections = content.get("collections")
+    if not isinstance(collections, list):
+        collections = []
+        content["collections"] = collections
+
+    process = content.get("process")
+    if not isinstance(process, list):
+        process = []
+        content["process"] = process
+
+    services = content.get("services")
+    if not isinstance(services, list):
+        services = []
+        content["services"] = services
+
     content.setdefault("heroSubtitle", DEFAULT_CONTENT["heroSubtitle"])
     content.setdefault("heroDescription", DEFAULT_CONTENT["heroDescription"])
     content.setdefault("aboutNarrative", DEFAULT_CONTENT["aboutNarrative"])
@@ -260,7 +273,7 @@ def get_render_context():
     content.setdefault("socialInstagram", DEFAULT_CONTENT["socialInstagram"])
     content.setdefault("socialTikTok", DEFAULT_CONTENT["socialTikTok"])
     content.setdefault("socialPinterest", DEFAULT_CONTENT["socialPinterest"])
-    season_count = len({item["season"] for item in content["collections"] if isinstance(item, dict) and item.get("season")})
+    season_count = len({str(item["season"]) for item in collections if isinstance(item, dict) and item.get("season") is not None})
     content_source = "Supabase" if supabase else "local JSON"
     return {"content": content, "season_count": season_count, "content_source": content_source}
 
@@ -315,7 +328,7 @@ def admin_upload_image():
 
     upload_file = request.files.get("file")
     collection_id = request.form.get("collection_id", "").strip()
-    if not upload_file or upload_file.filename == "":
+    if not upload_file or not upload_file.filename:
         return {"error": "No file uploaded"}, 400
 
     filename = secure_filename(upload_file.filename)
@@ -329,8 +342,9 @@ def admin_upload_image():
     file_bytes = upload_file.read()
     try:
         result = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).upload(key, file_bytes)
-        if getattr(result, "error", None):
-            return {"error": str(result.error)}, 500
+        result_error = getattr(result, "error", None)
+        if result_error:
+            return {"error": str(result_error)}, 500
 
         public_url = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(key)
         return {"url": public_url}
