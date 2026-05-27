@@ -39,11 +39,19 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 SUPABASE_STORAGE_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "collection-images")
 CONTENT_FILE = Path("content.json")
 
+print(
+    "Supabase config:",
+    "URL set" if bool(SUPABASE_URL) else "URL missing",
+    "KEY set" if bool(SUPABASE_KEY) else "KEY missing",
+    "BUCKET=" + SUPABASE_STORAGE_BUCKET,
+)
+
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    except Exception:
+    except Exception as exc:
+        print("Supabase initialization failed:", exc)
         supabase = None
 
 DEFAULT_CONTENT = {
@@ -324,7 +332,9 @@ def admin_upload_image():
         return {"error": "Unauthorized"}, 401
 
     if not supabase:
-        return {"error": "Supabase storage is not configured"}, 503
+        return {
+            "error": "Supabase storage is not configured. Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in your deployment environment.",
+        }, 503
 
     upload_file = request.files.get("file")
     collection_id = request.form.get("collection_id", "").strip()

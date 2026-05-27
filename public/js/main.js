@@ -36,6 +36,36 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener("scroll", updateActiveSection, { passive: true });
   }
 
+  const revealElements = document.querySelectorAll(".reveal");
+  if (revealElements.length > 0) {
+    const revealObserver = new IntersectionObserver(
+      function (entries, observer) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("active");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.18 }
+    );
+    revealElements.forEach(function (el) {
+      revealObserver.observe(el);
+    });
+  }
+
+  const heroImage = document.querySelector("#home img");
+  if (heroImage) {
+    window.addEventListener(
+      "scroll",
+      function () {
+        const offset = window.scrollY * 0.15;
+        heroImage.style.transform = `translateY(${offset}px) scale(1.02)`;
+      },
+      { passive: true }
+    );
+  }
+
   const adminTabs = document.querySelectorAll("[data-admin-tab]");
   const adminPanels = document.querySelectorAll("[data-admin-panel]");
   if (adminTabs.length && adminPanels.length) {

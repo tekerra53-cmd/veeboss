@@ -12,6 +12,22 @@ body {
   color: #f8fafc;
 }
 
+.reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+  will-change: opacity, transform;
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#home img {
+  transition: transform 0.3s ease-out;
+}
+
 .font-display {
   font-family: "Cinzel", serif;
 }
